@@ -45,6 +45,24 @@ class _HomeState extends State<Home> {
     });
   }
 
+  Future<Null> _refresh() async {
+    await Future.delayed(Duration(seconds: 1));
+
+    setState(() {
+      _toDoList.sort((a, b) {
+        if (a["ok"] && !b["ok"])
+          return 1;
+        else if (!a["ok"] && b["ok"])
+          return 1;
+        else
+          return 0;
+      });
+      _saveData();
+    });
+
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -77,10 +95,13 @@ class _HomeState extends State<Home> {
             ),
           ),
           Expanded(
-            child: ListView.builder(
-                padding: EdgeInsets.only(top: 10.0),
-                itemCount: _toDoList.length,
-                itemBuilder: buildtem),
+            child: RefreshIndicator(
+              onRefresh: _refresh,
+              child: ListView.builder(
+                  padding: EdgeInsets.only(top: 10.0),
+                  itemCount: _toDoList.length,
+                  itemBuilder: buildtem),
+            ),
           )
         ],
       ),
@@ -118,7 +139,7 @@ class _HomeState extends State<Home> {
       onDismissed: (direction) {
         setState(() {
           _lastRemoved = Map.from(_toDoList[index]);
-          _lastRemoved = index;
+          _lastRemovedPos = index;
           _toDoList.removeAt(index);
 
           _saveData();
@@ -133,9 +154,10 @@ class _HomeState extends State<Home> {
                     _saveData();
                   });
                 }),
-            duration: Duration(seconds: 2),
+            duration: Duration(seconds: 3),
           );
-          Scaffold.of(context).showSnackBar(snack);
+          Scaffold.of(context).removeCurrentSnackBar(); // Remove a atual
+          Scaffold.of(context).showSnackBar(snack); // Adiciona uma nova
         });
       },
     );
